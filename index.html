@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ether</title>
+
+  <!-- MediaPipe Hands -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0a0a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .stage {
+      position: relative;
+      width: 640px;
+      height: 480px;
+    }
+
+    /* Hidden — MediaPipe needs the video element but we don't show it */
+    video {
+      display: none;
+    }
+
+    /* Canvas sits on top — this is where everything renders */
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: scaleX(-1); /* Mirror so it feels like a reflection */
+    }
+  </style>
+</head>
+<body>
+
+  <div class="stage">
+    <video id="webcam" playsinline></video>
+    <canvas id="canvas" width="640" height="480"></canvas>
+  </div>
+
+  <script>
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Create a Hands instance and set it up with the right options
+    const hands = new Hands({
+      locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+      }
+    });
+
+    hands.setOptions({
+      maxNumHands: 2,
+      modelComplexity: 1,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    // Set up the callback to receive results from MediaPipe Hands
+    hands.onResults((results) => {
+      // Clear the canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw the video frame
+      ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+      // If landmarks are detected, draw them
+      if (results.multiHandLandmarks) {
+        results.multiHandLandmarks.forEach((landmarks, index) => {
+          drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FF00', lineWidth: 5 });
+          drawLandmarks(ctx, landmarks, { color: '#FF0000', lineWidth: 2 });
+
+          const handedness = results.multiHandedness[index].label === 'Left' ? 'Right' : 'Left';
+
+          if (handedness === 'Left') {
+            console.log('Left Hand Y:', landmarks[9].y);
+          } else {
+            console.log('Right Hand Y:', landmarks[9].y);
+          }
+        });
+      }
+    });
+
+    // Create a Camera instance to start the webcam feed
+    const camera = new Camera(video, {
+      onFrame: async () => {
+        await hands.send({ image: video });
+      },
+      width: 640,
+      height: 480
+    });
+    camera.start();
+
+  </script>
+</body>
+</html>

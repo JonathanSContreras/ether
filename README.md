@@ -82,11 +82,11 @@ No backend. No server. No dependencies to install. Open the file, allow webcam, 
 ## 📅 7-Day Build Plan
 
 ### Day 1 — Hand Tracking Foundation
-- [ ] Set up project structure (index.html, style.css, app.js)
-- [ ] Integrate MediaPipe Hands via CDN
-- [ ] Render webcam feed to canvas
-- [ ] Draw landmark skeleton (joints + bones) over video
-- [ ] Console.log hand Y-position for both hands
+- [x] Set up project structure (index.html, style.css, app.js)
+- [x] Integrate MediaPipe Hands via CDN
+- [x] Render webcam feed to canvas
+- [x] Draw landmark skeleton (joints + bones) over video
+- [x] Console.log hand Y-position for both hands
 - **End of day goal:** See glowing dots on your hands in the browser
 
 ### Day 2 — First Sound
@@ -208,5 +208,8 @@ Default: **A Pentatonic Minor.** It's almost impossible to play a wrong note.
 - The TikTok that started this whole thing
 
 ---
+
+## Docs
+- https://developers.google.com/mediapipe/solutions/vision/hand_landmarker
 
 *Built in one week. Played with two hands. Powered by the air.*
