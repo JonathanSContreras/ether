@@ -1,215 +1,132 @@
 # Ether
-## A gesture-controlled instrument you play from the air.
 
-> *"In the early 1920s, Leon Theremin built the etherphone — an instrument played without touch. A century later, your webcam is the stage."*
+**A musical instrument you play in the air.** Raise your hand and a note climbs. Lower the other and the sound fades. Spread your fingers to jump an octave, pinch to hold a note, close your fist to go silent.
 
-Ether is a browser-based, real-time musical instrument controlled entirely by hand gestures. No keyboard. No mouse. No MIDI controller. Just your hands, your webcam, and the air between you and the screen. Using computer vision to track hand landmarks and a synthesizer engine to produce sound, Ether maps the position, shape, and movement of your hands to musical parameters — pitch, volume, timbre, and effects.
+Ether runs entirely in the browser. It tracks both hands through your webcam with MediaPipe and turns what they do into sound with Tone.js. Nothing to install, no backend, and the video never leaves your computer.
 
----
+### [▶ Play it live](https://jonathanscontreras.github.io/ether/)
 
-## ✨ What It Looks Like
+![Ether's start screen, listing the gestures for each hand](docs/how-to-play.png)
 
-A dark, minimal UI opens in the browser. The webcam feed is mirrored in the background, dimmed. Glowing landmark points trace over your hands in real time. As your right hand rises, a tone climbs. As your left hand opens and closes, the volume swells and fades. Pinch two fingers together and a note locks in. The sound is ambient, ethereal — like a theremin crossed with a synthesizer.
-
-It looks like magic. That's the point.
+> In the early 1920s, Leon Theremin built the etherphone, an instrument played without touch. A century later, a webcam is enough.
 
 ---
 
-## 🎯 MVP (Minimum Viable Product)
+## How to play
 
-The MVP is a single-page browser app that does the following and nothing more:
+Open the link, click **Start playing** and allow the camera. The picture is a mirror, so your right hand shows on the right.
 
-- [ ] Detects both hands via webcam using MediaPipe Hands
-- [ ] Right hand Y-position controls pitch (mapped to a pentatonic scale)
-- [ ] Left hand Y-position controls volume
-- [ ] Tone.js oscillator produces continuous sound
-- [ ] Landmark skeleton renders visually on a canvas overlay
-- [ ] Works in Chrome with no install, no backend, no login
-
-**Definition of done for MVP:** A person who has never seen the app can open it, hold up their hands, and immediately understand what's happening and how to interact with it.
-
----
-
-## 🗺️ Full Feature Scope
-
-### Core Gestures
-| Gesture | Hand | Effect |
+| Hand | Gesture | What it does |
 |---|---|---|
-| Hand height (Y-axis) | Right | Pitch — maps to musical scale |
-| Hand height (Y-axis) | Left | Volume — amplitude of oscillator |
-| Finger spread (distance between index + pinky) | Right | Octave — wide spread = higher octave |
-| Pinch (thumb + index close) | Either | Sustain / note lock — freezes pitch |
-| Fist | Left | Mute — cuts audio instantly |
-| Both hands raised | Both | Reverb intensity — distance between hands controls wet/dry mix |
+| Right | Raise or lower | Changes the note |
+| Right | Spread your fingers | Jumps up an octave |
+| Either | Pinch thumb and index | Holds the note (a left-hand pinch keeps it going after your right hand leaves) |
+| Left | Raise or lower | Changes the volume |
+| Left | Make a fist | Mutes instantly |
+| Both | Move them apart | Adds reverb |
 
-### Audio Engine
-- **Oscillator types:** Sine (default), Triangle, Sawtooth, Square — selectable via UI
-- **Scale quantization:** Pentatonic (default), Major, Minor, Chromatic — keeps notes musical
-- **Effects chain:** Reverb → Delay → Limiter (prevents clipping)
-- **Root note selector:** A, B, C, D, E, F, G — sets the key you're playing in
+Keyboard: <kbd>Space</kbd> mutes, <kbd>1</kbd>–<kbd>5</kbd> switch between sine, triangle, saw, square and pad, <kbd>?</kbd> opens the guide.
 
-### Visual Layer
-- Webcam feed: dimmed, mirrored background
-- Hand skeleton: glowing joint landmarks with connecting bones
-- Pitch indicator: a vertical bar or glowing orb that shows the current note name
-- Volume indicator: pulse/glow intensity on the hand that matches amplitude
-- Active note display: large centered text showing the note name (e.g. "A4")
+The bottom bar changes the scale (pentatonic minor/major, natural minor, major, chromatic), the key (A–G), the sound, and turns reverb on or off.
 
-### UI Controls (minimal sidebar or bottom bar)
-- [ ] Scale selector (Pentatonic / Major / Minor / Chromatic)
-- [ ] Root note selector (A–G)
-- [ ] Oscillator type (Sine / Triangle / Saw / Square)
-- [ ] Reverb toggle
-- [ ] Mute button (keyboard shortcut: Space)
-- [ ] "How to play" overlay (keyboard shortcut: ?)
+## Features
 
----
+- **Two-handed control.** Up to two hands tracked at once with 21 landmarks each, at webcam frame rate.
+- **Always in tune.** Pitch snaps to the selected scale, so it sounds like music instead of a siren. The default, A minor pentatonic, has no wrong notes.
+- **Gestures that hold up.** Pinch, fist and finger-spread detection work at any distance from the camera and don't flicker at the edges.
+- **Five sounds.** Sine, triangle, saw, square, and a detuned, filtered pad with a slow swell.
+- **Effects you play with your body.** Reverb and delay, with the reverb amount set by how far apart your hands are.
+- **Visual feedback.** Glowing hand skeletons color-coded by role, a large note name that brightens with volume, a note ladder and volume meter lined up with where your hands need to be.
+- **Private by design.** Hand tracking runs on-device in WebAssembly. No video or audio is uploaded anywhere.
 
-## 🏗️ Tech Stack
+## How it works
 
-| Layer | Tool | Why |
-|---|---|---|
-| Hand Tracking | [MediaPipe Hands](https://developers.google.com/mediapipe/solutions/vision/hand_landmarker) | Best-in-class browser CV, 21 landmarks per hand, 30fps+ |
-| Audio Synthesis | [Tone.js](https://tonejs.github.io/) | Clean API for oscillators, effects, scheduling |
-| Rendering | HTML5 Canvas | Overlay landmark skeleton on video feed |
-| UI | Vanilla HTML/CSS/JS | No framework overhead — ships as a single file |
-| Hosting | GitHub Pages / Vercel | Zero config, shareable link |
+```mermaid
+flowchart LR
+  cam[Webcam] --> mp["MediaPipe Hands<br/>21 landmarks per hand"]
+  mp --> gest["Gestures<br/>smoothing, pinch, fist, spread"]
+  gest --> music["Music mapping<br/>height → scale note"]
+  gest --> draw["Canvas + UI"]
+  music --> synth["Tone.js synth"]
+  subgraph Audio chain
+    synth --> filter[Filter] --> reverb[Reverb] --> delay[Delay] --> vol[Volume] --> lim[Limiter]
+  end
+  lim --> out[Speakers]
+```
 
-No backend. No server. No dependencies to install. Open the file, allow webcam, play.
+Each frame, MediaPipe returns landmark positions for every hand it sees. Ether smooths them, detects gestures, maps them to musical values, updates the synth, and redraws the canvas.
 
----
+### Engineering notes
 
-## 📅 7-Day Build Plan
+A few problems that took more than the obvious solution:
 
-### Day 1 — Hand Tracking Foundation
-- [x] Set up project structure (index.html, style.css, app.js)
-- [x] Integrate MediaPipe Hands via CDN
-- [x] Render webcam feed to canvas
-- [x] Draw landmark skeleton (joints + bones) over video
-- [x] Console.log hand Y-position for both hands
-- **End of day goal:** See glowing dots on your hands in the browser
+- **Mapping height to a scale, not a frequency.** Raw hand height mapped to frequency sounds chaotic. Ether divides the playable band into the notes of the current scale (two octaves), so every position lands on a note in key. Changing the scale or key rebuilds that list on the fly.
+- **Hysteresis everywhere.** A hand resting on the line between two notes would flip between them every frame. The note only changes once the hand moves well past the boundary. Pinch and finger spread use the same idea, with separate on and off thresholds.
+- **Gestures that don't depend on distance.** A pinch looks smaller in pixels when your hand is far from the camera. Every gesture compares fingertip distances to the length of the palm instead of using fixed pixel thresholds, so they behave the same up close or across the room.
+- **Jitter vs. latency.** Landmark positions are averaged over the last 5 frames (about 170 ms), with short pitch glides between notes. That removes the tremor without making the instrument feel slow to respond.
+- **Where volume sits in the chain.** Volume comes after the reverb and delay, not before. Otherwise a fist would cut the synth but leave several seconds of reverb tail ringing. A limiter at the end keeps loud moments from clipping.
+- **Handedness in a mirror.** MediaPipe labels hands assuming a mirrored selfie image. Ether feeds it the raw camera frame for accuracy, swaps the labels back, and mirrors only the display.
+- **Audio autoplay rules.** Browsers block sound until the user interacts with the page, so the "how to play" screen doubles as the click that starts audio and the camera.
 
-### Day 2 — First Sound
-- [ ] Integrate Tone.js via CDN
-- [ ] Create a basic Synth oscillator
-- [ ] Map right hand Y-position to raw frequency
-- [ ] Gate audio on/off when hand is detected / not detected
-- **End of day goal:** Moving your hand changes the pitch of a sound
+## Tech stack
 
-### Day 3 — Make It Musical
-- [ ] Implement scale quantization (snap frequency to nearest scale note)
-- [ ] Default to A pentatonic minor
-- [ ] Map left hand Y-position to volume
-- [ ] Add octave switching via finger spread
-- **End of day goal:** Playing up and down sounds like actual music, not noise
+| Layer | Tool |
+|---|---|
+| Hand tracking | [MediaPipe Hands](https://developers.google.com/mediapipe/solutions/vision/hand_landmarker) (WebAssembly, on-device) |
+| Audio | [Tone.js](https://tonejs.github.io/) (Web Audio API) |
+| Rendering | HTML5 Canvas |
+| UI | Vanilla HTML, CSS and JavaScript, no framework or build step |
+| Hosting | GitHub Pages |
 
-### Day 4 — Gesture Refinement
-- [ ] Implement pinch detection (thumb + index fingertip distance)
-- [ ] Pinch = sustain / note lock
-- [ ] Fist detection = mute
-- [ ] Smooth out jitter with a rolling average on landmark positions
-- **End of day goal:** Gestures feel intentional, not accidental
+## Run it locally
 
-### Day 5 — Effects & Audio Polish
-- [ ] Add Reverb effect (Tone.Reverb)
-- [ ] Add Delay effect (Tone.FeedbackDelay)
-- [ ] Wire both-hands distance to reverb wet/dry mix
-- [ ] Add Limiter to prevent clipping
-- [ ] Test multiple oscillator types
-- **End of day goal:** The sound feels ambient, lush, and professional
+The camera only works on `localhost` or HTTPS, so serve the folder rather than opening the file directly:
 
-### Day 6 — UI & Visual Polish
-- [ ] Design the dark, minimal UI
-- [ ] Add scale / root note / oscillator selectors
-- [ ] Show active note name on screen
-- [ ] Add visual feedback for volume (glow intensity)
-- [ ] Add "How to play" overlay
-- [ ] Make it look good enough to screenshot
-- **End of day goal:** You'd be proud to show someone a screenshot
+```bash
+git clone https://github.com/JonathanSContreras/ether.git
+cd ether
+python3 -m http.server 8000
+```
 
-### Day 7 — Ship It
-- [ ] Cross-browser test (Chrome primary, Firefox secondary)
-- [ ] Write the README (use this doc as the base)
-- [ ] Record a 60-second demo video
-- [ ] Deploy to GitHub Pages or Vercel
-- [ ] Share it
-- **End of day goal:** The project has a public URL and a demo anyone can watch
+Then open <http://localhost:8000>. Requires a webcam and a desktop browser (Chrome, Firefox or Safari).
 
----
-
-## 🚧 Known Challenges & How to Handle Them
-
-**Jitter / hand tremor causing pitch to wobble**
-→ Apply a rolling average (last 5–10 frames) to landmark Y values before mapping to pitch. This smooths the output without adding noticeable lag.
-
-**Pitch sounds chaotic and atonal**
-→ Never map raw Y-position to raw frequency. Always quantize to a scale. This is the single most important decision in the whole project.
-
-**Audio doesn't start until user interacts**
-→ Browsers block autoplay audio. Gate Tone.js start behind a button click or keypress. A simple "Tap to begin" overlay solves this cleanly.
-
-**MediaPipe loses tracking when hands overlap**
-→ This is a known limitation. Design the UX so hands operate in separate vertical zones (left hand stays left, right hand stays right).
-
-**Latency between gesture and sound**
-→ Keep the audio buffer size small. Tone.js defaults are fine. Avoid processing-heavy effects chains that add latency.
-
----
-
-## 🔮 Post-MVP Ideas (don't touch until week 2+)
-
-- **Chord mode:** Both hands each play a note simultaneously → intervals/harmonics
-- **Loop recorder:** Pinch + hold records a gesture loop, release plays it back
-- **Drum layer:** Specific gestures trigger percussive samples (snap, clap detection)
-- **Visualizer mode:** Audio-reactive particle system instead of landmark skeleton
-- **Preset system:** Save/load named gesture-to-sound mappings
-- **Multiplayer (wildest idea):** Two users' webcam feeds mixed — duet mode over WebRTC
-- **Worship mode:** Ambient drone pads, slower attack/release, built for contemplative use
-
----
-
-## 📁 Project Structure
+## Project structure
 
 ```
 ether/
-├── index.html          # Entry point — imports everything
-├── style.css           # Dark minimal UI styles
-├── app.js              # Main logic — camera, CV, audio wiring
-├── hands.js            # MediaPipe setup + landmark extraction
-├── audio.js            # Tone.js synth, effects chain, scale mapping
-├── gestures.js         # Gesture detection (pinch, fist, spread)
-├── ui.js               # DOM updates, note display, controls
-└── README.md           # This document
+├── index.html   # Page structure, controls and the how-to-play guide
+├── style.css    # Visual design (color tokens, layout, responsive rules)
+├── app.js       # Hand tracking, gesture detection, audio engine, drawing and UI wiring
+└── docs/        # README images
 ```
 
----
+`app.js` is split into labeled sections (music settings, audio, gestures, smoothing, layout, drawing, display, tracking, controls) and has no dependencies beyond the two CDN libraries.
 
-## 🎵 Scale Reference
+## What's next
 
-Scales available in Ether (notes relative to root):
+- **Chord mode:** each hand plays its own note, for intervals and harmony
+- **Loop recorder:** pinch and hold to record a phrase, release to loop it
+- **Brightness on the left hand:** open the pad's filter as the volume rises
+- **Visualizer mode:** an audio-reactive particle field in place of the hand skeleton
+- **Presets:** save and load sound and scale combinations
+- **Duet mode:** two players over WebRTC
 
-| Scale | Intervals | Vibe |
-|---|---|---|
-| Pentatonic Minor | 0, 3, 5, 7, 10 | Ambient, emotional, forgiving |
-| Pentatonic Major | 0, 2, 4, 7, 9 | Bright, uplifting |
-| Natural Minor | 0, 2, 3, 5, 7, 8, 10 | Dark, expressive |
-| Major | 0, 2, 4, 5, 7, 9, 11 | Classic, resolved |
-| Chromatic | All 12 | Maximum control, maximum chaos |
+## Build log
 
-Default: **A Pentatonic Minor.** It's almost impossible to play a wrong note.
+Ether was built in a week, one layer per day:
 
----
+1. Hand tracking and the landmark skeleton
+2. First sound: a synth following the right hand
+3. Scale quantization, left-hand volume, octave on finger spread
+4. Pinch to hold, fist to mute, jitter smoothing
+5. Reverb, delay, limiter, and hands-apart reverb control
+6. Visual design, controls, and the how-to-play guide
+7. Shipped
 
-## 🙌 Inspiration
+## Credits
 
-- **Leon Theremin** (1920) — the original contactless instrument
-- **Google's Body Synth** — early browser gesture + audio experiments  
-- **HandsFree.js** — community work on browser hand tracking music
-- The TikTok that started this whole thing
+Inspired by Leon Theremin's etherphone (1920), Google's browser body-synth experiments, and HandsFree.js.
 
----
+## License
 
-## Docs
-- https://developers.google.com/mediapipe/solutions/vision/hand_landmarker
-
-*Built in one week. Played with two hands. Powered by the air.*
+[MIT](LICENSE)
